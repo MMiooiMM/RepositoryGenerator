@@ -278,68 +278,34 @@ namespace Duotify.EFCore.RepositoryGenerator
                 Directory.CreateDirectory(outputDir);
             }
 
-            var sb = new StringBuilder();
-
             var entityTypes = type.GetProperties()
                .Where(prop => CheckIfDbSetGenericType(prop.PropertyType))
                .Select(type => type.PropertyType.GetGenericArguments()[0]);
 
-            {
-                var fileName = "EFRepository.cs";
-                var fileContent = GenerateEFRepositoryTemplate(type);
-                var filePath = Path.Combine(outputDir, fileName);
-                using StreamWriter sw = new StreamWriter(filePath);
-                sw.Write(fileContent);
-                sb.AppendLine($"Creating {filePath}");
-            }
-
-            {
-                var fileName = "EFUnitOfWork.cs";
-                var fileContent = GenerateEFUnitOfWorkTemplate(type);
-                var filePath = Path.Combine(outputDir, fileName);
-                using StreamWriter sw = new StreamWriter(filePath);
-                sw.Write(fileContent);
-                sb.AppendLine($"Creating {filePath}");
-            }
-
-            {
-                var fileName = "IRepository.cs";
-                var fileContent = GenerateIRepositoryTemplate(type);
-                var filePath = Path.Combine(outputDir, fileName);
-                using StreamWriter sw = new StreamWriter(filePath);
-                sw.Write(fileContent);
-                sb.AppendLine($"Creating {filePath}");
-            }
-
-            {
-                var fileName = "IUnitOfWork.cs";
-                var fileContent = GenerateIUnitOfWorkTemplate(type);
-                var filePath = Path.Combine(outputDir, fileName);
-                using StreamWriter sw = new StreamWriter(filePath);
-                sw.Write(fileContent);
-                sb.AppendLine($"Creating {filePath}");
-            }
-
-            {
-                var fileName = "RepositoryHelper.cs";
-                var fileContent = GenerateRepositoryHelperTemplate(type, entityTypes);
-                var filePath = Path.Combine(outputDir, fileName);
-                using StreamWriter sw = new StreamWriter(filePath);
-                sw.Write(fileContent);
-                sb.AppendLine($"Creating {filePath}");
-            }
+            CreateFile("EFRepository.cs", GenerateEFRepositoryTemplate(type), outputDir);
+            CreateFile("EFUnitOfWork.cs", GenerateEFUnitOfWorkTemplate(type), outputDir);
+            CreateFile("IRepository.cs", GenerateIRepositoryTemplate(type), outputDir);
+            CreateFile("IUnitOfWork.cs", GenerateIUnitOfWorkTemplate(type), outputDir);
+            CreateFile("RepositoryHelper.cs", GenerateRepositoryHelperTemplate(type, entityTypes), outputDir);
 
             foreach (var entityType in entityTypes) 
-            {             
-                var fileName = $"{entityType.Name}Repository.cs";
-                var fileContent = GenerateRepositoryTemplate(entityType);
-                var filePath = Path.Combine(outputDir, fileName);
-                using StreamWriter sw = new StreamWriter(filePath);
-                sw.Write(fileContent);
-                sb.AppendLine($"Creating {filePath}");
-            }
+            {
+                CreateFile($"{entityType.Name}Repository.cs", GenerateRepositoryTemplate(entityType), outputDir);
+            }           
+        }
 
-            Reporter.WriteVerbose(sb.ToString());
+        /// <summary>
+        /// 產生檔案
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="fileContent"></param>
+        /// <param name="outputDir"></param>
+        private static void CreateFile(string fileName, string fileContent, string outputDir)
+        {
+            var filePath = Path.Combine(outputDir, fileName);
+            using StreamWriter sw = new StreamWriter(filePath);
+            sw.Write(fileContent);
+            Reporter.WriteVerbose($"Creating {filePath}");
         }
 
         /// <summary>
