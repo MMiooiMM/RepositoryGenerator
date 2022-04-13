@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Duotify.EFCore.RepositoryGenerator": {
+      "commandName": "Project",
+      "commandLineArgs": "generate -v",
+      "workingDirectory": "C:\\Users\\mio\\Documents\\Projects\\duotify-eip\\duotify-eip-backend\\DuotifyEip_Dal"
+    }
+  }
+}
