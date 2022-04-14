@@ -416,9 +416,9 @@ namespace Duotify.EFCore.RepositoryGenerator
             StringBuilder sb = new StringBuilder();
 
             sb.AppendLine("using System;");
-            sb.AppendLine("using System.Data.Entity;");
             sb.AppendLine("using System.Linq;");
             sb.AppendLine("using System.Linq.Expressions;");
+            sb.AppendLine("using Microsoft.EntityFrameworkCore;");
             sb.AppendLine();
             sb.AppendLine($"namespace {type.Namespace}");
             sb.AppendLine("{");
@@ -426,8 +426,8 @@ namespace Duotify.EFCore.RepositoryGenerator
             sb.AppendLine("    {");
             sb.AppendLine("        public IUnitOfWork UnitOfWork { get; set; }");
             sb.AppendLine("        ");
-            sb.AppendLine("        private IDbSet<T> _objectset;");
-            sb.AppendLine("        private IDbSet<T> ObjectSet");
+            sb.AppendLine("        private DbSet<T> _objectset;");
+            sb.AppendLine("        private DbSet<T> ObjectSet");
             sb.AppendLine("        {");
             sb.AppendLine("            get");
             sb.AppendLine("            {");
@@ -474,7 +474,7 @@ namespace Duotify.EFCore.RepositoryGenerator
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine("using System.Data.Entity;");
+            sb.AppendLine("using Microsoft.EntityFrameworkCore;");
             sb.AppendLine();
             sb.AppendLine($"namespace {type.Namespace}");
             sb.AppendLine("{");
@@ -482,8 +482,8 @@ namespace Duotify.EFCore.RepositoryGenerator
             sb.AppendLine("    {");
             sb.AppendLine("        DbContext Context { get; set; }");
             sb.AppendLine("        void Commit();");
-            sb.AppendLine("        bool LazyLoadingEnabled { get; set; }");
-            sb.AppendLine("        bool ProxyCreationEnabled { get; set; }");
+            //sb.AppendLine("        bool LazyLoadingEnabled { get; set; }");
+            //sb.AppendLine("        bool ProxyCreationEnabled { get; set; }");
             sb.AppendLine("        string ConnectionString { get; set; }");
             sb.AppendLine("    }");
             sb.AppendLine("}");
@@ -500,7 +500,7 @@ namespace Duotify.EFCore.RepositoryGenerator
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine("using System.Data.Entity;");
+            sb.AppendLine("using Microsoft.EntityFrameworkCore;");
             sb.AppendLine();
             sb.AppendLine($"namespace {type.Namespace}");
             sb.AppendLine("{");
@@ -510,30 +510,30 @@ namespace Duotify.EFCore.RepositoryGenerator
             sb.AppendLine();
             sb.AppendLine("        public EFUnitOfWork()");
             sb.AppendLine("        {");
-            sb.AppendLine("            Context = new ContosoUniversityEntities();");
+            sb.AppendLine($"            Context = new {type.Name}();");
             sb.AppendLine("        }");
             sb.AppendLine();
             sb.AppendLine("        public void Commit()");
             sb.AppendLine("        {");
             sb.AppendLine("            Context.SaveChanges();");
             sb.AppendLine("        }");
-            sb.AppendLine("        ");
-            sb.AppendLine("        public bool LazyLoadingEnabled");
-            sb.AppendLine("        {");
-            sb.AppendLine("            get { return Context.Configuration.LazyLoadingEnabled; }");
-            sb.AppendLine("            set { Context.Configuration.LazyLoadingEnabled = value; }");
-            sb.AppendLine("        }");
             sb.AppendLine();
-            sb.AppendLine("        public bool ProxyCreationEnabled");
-            sb.AppendLine("        {");
-            sb.AppendLine("            get { return Context.Configuration.ProxyCreationEnabled; }");
-            sb.AppendLine("            set { Context.Configuration.ProxyCreationEnabled = value; }");
-            sb.AppendLine("        }");
-            sb.AppendLine("        ");
+            //sb.AppendLine("        public bool LazyLoadingEnabled");
+            //sb.AppendLine("        {");
+            //sb.AppendLine("            get { return Context.Configuration.LazyLoadingEnabled; }");
+            //sb.AppendLine("            set { Context.Configuration.LazyLoadingEnabled = value; }");
+            //sb.AppendLine("        }");
+            //sb.AppendLine();
+            //sb.AppendLine("        public bool ProxyCreationEnabled");
+            //sb.AppendLine("        {");
+            //sb.AppendLine("            get { return Context.Configuration.ProxyCreationEnabled; }");
+            //sb.AppendLine("            set { Context.Configuration.ProxyCreationEnabled = value; }");
+            //sb.AppendLine("        }");
+            //sb.AppendLine();
             sb.AppendLine("        public string ConnectionString");
             sb.AppendLine("        {");
-            sb.AppendLine("            get { return Context.Database.Connection.ConnectionString; }");
-            sb.AppendLine("            set { Context.Database.Connection.ConnectionString = value; }");
+            sb.AppendLine("            get { return Context.Database.GetConnectionString(); }");
+            sb.AppendLine("            set { Context.Database.SetConnectionString(value); }");
             sb.AppendLine("        }");
             sb.AppendLine("    }");
             sb.AppendLine("}");
