@@ -262,7 +262,7 @@ namespace Duotify.EFCore.EFRepositoryGenerator
         private void CreateFiles(Type type, string output, string baseNamespace, bool force)
         {
             var outputDir = string.IsNullOrWhiteSpace(output)
-                ? Directory.GetCurrentDirectory()
+                ? Path.Combine(Directory.GetCurrentDirectory(), "Repositories")
                 : Path.Combine(Directory.GetCurrentDirectory(), output);
 
             if (!Directory.Exists(outputDir))
