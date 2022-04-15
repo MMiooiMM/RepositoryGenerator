@@ -39,7 +39,9 @@ namespace Duotify.EFCore.EFRepositoryGenerator
                     c.Option("project", "project", "p", Resources.ProjectOptionDescription);
                     c.OnRun((namedArgs) =>
                     {
-                        var assembly = GetAssembly(namedArgs.GetValueOrDefault("project"));
+                        var project = GetAndBuildProject(namedArgs.GetValueOrDefault("project"));
+
+                        var assembly = GetAssemblyFromProject(project);
 
                         var dbContextNames = GetDbContextTypesFromAssembly(assembly).Select(type => GetFullName(type));
 
@@ -61,12 +63,15 @@ namespace Duotify.EFCore.EFRepositoryGenerator
                     c.Option("output", "output-dir", "o", Resources.OutputOptionDescription);
                     c.Option("project", "project", "p", Resources.ProjectOptionDescription);
                     c.Option("context", "context", "c", Resources.ContextOptionDescription);
+                    c.Option("force", "force", "f", Resources.ForceOptionDescription, true);
                     c.Option("verbose", "verbose", "v", Resources.VerboseOptionDescription, true);
                     c.OnRun((namedArgs) =>
                     {
                         Reporter.IsVerbose = namedArgs.ContainsKey("verbose");
 
-                        var assembly = GetAssembly(namedArgs.GetValueOrDefault("project"));
+                        var project = GetAndBuildProject(namedArgs.GetValueOrDefault("project"));
+
+                        var assembly = GetAssemblyFromProject(project);
 
                         var dbContextTypes = GetDbContextTypesFromAssembly(assembly);                        
 
@@ -76,7 +81,9 @@ namespace Duotify.EFCore.EFRepositoryGenerator
                             .Where(t => t.Name.Equals(namedArgs.GetValueOrDefault("context")));
                         }
 
-                        CreateFiles(dbContextTypes.FirstOrDefault(), namedArgs.GetValueOrDefault("output"));
+                        CreateFiles(dbContextTypes.FirstOrDefault(), 
+                            namedArgs.GetValueOrDefault("output"),
+                            project.RootNamespace);
 
                         return 1;
                     });
@@ -112,18 +119,6 @@ namespace Duotify.EFCore.EFRepositoryGenerator
         }
 
         /// <summary>
-        /// 取得 Assembly
-        /// </summary>
-        /// <param name="projectPath"></param>
-        /// <returns></returns>
-        private Assembly GetAssembly(string projectPath)
-        {
-            var project = GetAndBuildProject(projectPath);
-
-            return GetAssemblyFromProject(project);
-        }
-
-        /// <summary>
         /// 取得專案資訊並建置專案
         /// </summary>
         /// <param name="projectPath"></param>
@@ -135,7 +130,7 @@ namespace Duotify.EFCore.EFRepositoryGenerator
             var project = Project.FromFile(projectFile, null);
 
             Reporter.WriteInformation(Resources.BuildStarted);
-            project.Build();
+            //project.Build();
             Reporter.WriteInformation(Resources.BuildSucceeded);
 
             return project;
@@ -267,7 +262,8 @@ namespace Duotify.EFCore.EFRepositoryGenerator
         /// </summary>
         /// <param name="type"></param>
         /// <param name="output"></param>
-        private void CreateFiles(Type type, string output)
+        /// <param name="baseNamespace"></param>
+        private void CreateFiles(Type type, string output, string baseNamespace)
         {
             var outputDir = string.IsNullOrWhiteSpace(output)
                 ? Directory.GetCurrentDirectory()
@@ -278,19 +274,21 @@ namespace Duotify.EFCore.EFRepositoryGenerator
                 Directory.CreateDirectory(outputDir);
             }
 
+            var outputNamespace = Path.Combine(baseNamespace, output).Replace("\\", ".").Replace("/", ".");
+
             var entityTypes = type.GetProperties()
                .Where(prop => CheckIfDbSetGenericType(prop.PropertyType))
                .Select(type => type.PropertyType.GetGenericArguments()[0]);
 
-            CreateFile("EFRepository.cs", GenerateEFRepositoryTemplate(type), outputDir);
-            CreateFile("EFUnitOfWork.cs", GenerateEFUnitOfWorkTemplate(type), outputDir);
-            CreateFile("IRepository.cs", GenerateIRepositoryTemplate(type), outputDir);
-            CreateFile("IUnitOfWork.cs", GenerateIUnitOfWorkTemplate(type), outputDir);
-            CreateFile("RepositoryHelper.cs", GenerateRepositoryHelperTemplate(type, entityTypes), outputDir);
+            CreateFile("EFRepository.cs", GenerateEFRepositoryTemplate(outputNamespace), outputDir);
+            CreateFile("EFUnitOfWork.cs", GenerateEFUnitOfWorkTemplate(type, outputNamespace), outputDir);
+            CreateFile("IRepository.cs", GenerateIRepositoryTemplate(outputNamespace), outputDir);
+            CreateFile("IUnitOfWork.cs", GenerateIUnitOfWorkTemplate(outputNamespace), outputDir);
+            CreateFile("RepositoryHelper.cs", GenerateRepositoryHelperTemplate(entityTypes, outputNamespace), outputDir);
 
             foreach (var entityType in entityTypes) 
             {
-                CreateFile($"{entityType.Name}Repository.cs", GenerateRepositoryTemplate(entityType), outputDir);
+                CreateFile($"{entityType.Name}Repository.cs", GenerateRepositoryTemplate(entityType, outputNamespace), outputDir);
             }           
         }
 
@@ -334,16 +332,18 @@ namespace Duotify.EFCore.EFRepositoryGenerator
         /// 產生 Repository 範本
         /// </summary>
         /// <param name="type"></param>
+        /// <param name="outputNamespace"></param>
         /// <returns></returns>
-        private static string GenerateRepositoryTemplate(Type type)
+        private static string GenerateRepositoryTemplate(Type type, string outputNamespace)
         {
             StringBuilder sb = new StringBuilder();
 
             sb.AppendLine("using System;");
             sb.AppendLine("using System.Linq;");
             sb.AppendLine("using System.Collections.Generic;");
+            sb.AppendLine($"using {type.Namespace};");
             sb.AppendLine();
-            sb.AppendLine($"namespace {type.Namespace}");
+            sb.AppendLine($"namespace {outputNamespace}");
             sb.AppendLine("{");
             sb.AppendLine($"    public class {type.Name}Repository : EFRepository<{type.Name}>, I{type.Name}Repository");
             sb.AppendLine("    {");
@@ -362,19 +362,14 @@ namespace Duotify.EFCore.EFRepositoryGenerator
         /// <summary>
         /// 產生 RepositoryHelper 範本
         /// </summary>
-        /// <param name="type"></param>
         /// <param name="entityTypes"></param>
+        /// <param name="outputNamespace"></param>
         /// <returns></returns>
-        private static string GenerateRepositoryHelperTemplate(Type type, IEnumerable<Type> entityTypes)
+        private static string GenerateRepositoryHelperTemplate(IEnumerable<Type> entityTypes, string outputNamespace)
         {
-            if (!CheckIfTypeInheritanceDbContext(type)) 
-            { 
-                return string.Empty;
-            }
-
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine($"namespace {type.Namespace}");
+            sb.AppendLine($"namespace {outputNamespace}");
             sb.AppendLine("{");
             sb.AppendLine("    public static class RepositoryHelper");
             sb.AppendLine("    {");
@@ -409,9 +404,9 @@ namespace Duotify.EFCore.EFRepositoryGenerator
         /// <summary>
         /// 產生 EFRepository 範本
         /// </summary>
-        /// <param name="type"></param>
+        /// <param name="outputNamespace"></param>
         /// <returns></returns>
-        private static string GenerateEFRepositoryTemplate(Type type)
+        private static string GenerateEFRepositoryTemplate(string outputNamespace)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -420,7 +415,7 @@ namespace Duotify.EFCore.EFRepositoryGenerator
             sb.AppendLine("using System.Linq.Expressions;");
             sb.AppendLine("using Microsoft.EntityFrameworkCore;");
             sb.AppendLine();
-            sb.AppendLine($"namespace {type.Namespace}");
+            sb.AppendLine($"namespace {outputNamespace}");
             sb.AppendLine("{");
             sb.AppendLine("    public class EFRepository<T> : IRepository<T> where T : class");
             sb.AppendLine("    {");
@@ -468,15 +463,15 @@ namespace Duotify.EFCore.EFRepositoryGenerator
         /// <summary>
         /// 產生 IUnitOfWork 範本
         /// </summary>
-        /// <param name="type"></param>
+        /// <param name="outputNamespace"></param>
         /// <returns></returns>
-        private static string GenerateIUnitOfWorkTemplate(Type type) 
+        private static string GenerateIUnitOfWorkTemplate(string outputNamespace) 
         {
             StringBuilder sb = new StringBuilder();
 
             sb.AppendLine("using Microsoft.EntityFrameworkCore;");
             sb.AppendLine();
-            sb.AppendLine($"namespace {type.Namespace}");
+            sb.AppendLine($"namespace {outputNamespace}");
             sb.AppendLine("{");
             sb.AppendLine("    public interface IUnitOfWork");
             sb.AppendLine("    {");
@@ -495,14 +490,16 @@ namespace Duotify.EFCore.EFRepositoryGenerator
         /// 產生 EFUnitOfWork 範本
         /// </summary>
         /// <param name="type"></param>
+        /// <param name="outputNamespace"></param>
         /// <returns></returns>
-        private static string GenerateEFUnitOfWorkTemplate(Type type) 
+        private static string GenerateEFUnitOfWorkTemplate(Type type, string outputNamespace) 
         {
             StringBuilder sb = new StringBuilder();
 
+            sb.AppendLine($"using {type.Namespace};");
             sb.AppendLine("using Microsoft.EntityFrameworkCore;");
             sb.AppendLine();
-            sb.AppendLine($"namespace {type.Namespace}");
+            sb.AppendLine($"namespace {outputNamespace}");
             sb.AppendLine("{");
             sb.AppendLine("    public class EFUnitOfWork : IUnitOfWork");
             sb.AppendLine("    {");
@@ -544,9 +541,9 @@ namespace Duotify.EFCore.EFRepositoryGenerator
         /// <summary>
         /// 產生 IRepository 範本
         /// </summary>
-        /// <param name="type"></param>
+        /// <param name="outputNamespace"></param>
         /// <returns></returns>
-        private static string GenerateIRepositoryTemplate(Type type) 
+        private static string GenerateIRepositoryTemplate(string outputNamespace) 
         {
             StringBuilder sb = new StringBuilder();
 
@@ -556,7 +553,7 @@ namespace Duotify.EFCore.EFRepositoryGenerator
             sb.AppendLine("using System.Linq.Expressions;");
             sb.AppendLine("using System.Text;");
             sb.AppendLine();
-            sb.AppendLine($"namespace {type.Namespace}");
+            sb.AppendLine($"namespace {outputNamespace}");
             sb.AppendLine("{");
             sb.AppendLine("    public interface IRepository<T>");
             sb.AppendLine("    {");
