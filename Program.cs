@@ -3,7 +3,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-namespace Duotify.EFCore.RepositoryGenerator
+
+namespace Duotify.EFCore.EFRepositoryGenerator
 {
     internal class Program
     {

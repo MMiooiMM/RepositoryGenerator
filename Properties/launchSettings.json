@@ -3,7 +3,7 @@
     "Duotify.EFCore.RepositoryGenerator": {
       "commandName": "Project",
       "commandLineArgs": "generate -v",
-      "workingDirectory": "C:\\Users\\mio\\Documents\\Projects\\duotify-eip\\duotify-eip-backend\\DuotifyEip_Dal"
+      "workingDirectory": "C:\\Users\\mio\\source\\repos\\WebApplication1\\WebApplication1"
     }
   }
 }

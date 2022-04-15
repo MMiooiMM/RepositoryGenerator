@@ -1,4 +1,4 @@
-﻿namespace Duotify.EFCore.RepositoryGenerator
+﻿namespace Duotify.EFCore.EFRepositoryGenerator
 {
     internal static class AnsiConstants
     {

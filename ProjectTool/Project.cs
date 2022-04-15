@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Duotify.EFCore.RepositoryGenerator.Properties;
+using Duotify.EFCore.EFRepositoryGenerator.Properties;
 
-namespace Duotify.EFCore.RepositoryGenerator
+namespace Duotify.EFCore.EFRepositoryGenerator
 {
     internal class Project
     {
@@ -57,8 +57,9 @@ namespace Duotify.EFCore.RepositoryGenerator
             var efTargetsPath = Path.Combine(
                 buildExtensionsDir,
                 Path.GetFileName(file) + ".EntityFrameworkCore.targets");
+            var a = typeof(Resources);
             using (var input = typeof(Resources).Assembly.GetManifestResourceStream(
-                "Duotify.EFCore.RepositoryGenerator.Resources.EntityFrameworkCore.targets")!)
+                "Duotify.EFCore.EFRepositoryGenerator.Resources.EntityFrameworkCore.targets")!)
             using (var output = File.OpenWrite(efTargetsPath))
             {
                 // NB: Copy always in case it changes

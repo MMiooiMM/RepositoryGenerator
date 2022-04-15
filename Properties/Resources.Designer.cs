@@ -7,7 +7,7 @@ using JetBrains.Annotations;
 
 #nullable enable
 
-namespace Duotify.EFCore.RepositoryGenerator.Properties
+namespace Duotify.EFCore.EFRepositoryGenerator.Properties
 {
     /// <summary>
     ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
@@ -18,7 +18,7 @@ namespace Duotify.EFCore.RepositoryGenerator.Properties
     internal static class Resources
     {
         private static readonly ResourceManager _resourceManager
-            = new ResourceManager("Duotify.EFCore.RepositoryGenerator.Properties.Resources", typeof(Resources).Assembly);
+            = new ResourceManager("Duotify.EFCore.EFRepositoryGenerator.Properties.Resources", typeof(Resources).Assembly);
 
         /// <summary>
         ///     Missing {assemblyFilePath}!

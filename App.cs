@@ -6,12 +6,12 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Duotify.EFCore.RepositoryGenerator.Properties;
+using Duotify.EFCore.EFRepositoryGenerator.Properties;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Duotify.EFCore.RepositoryGenerator
+namespace Duotify.EFCore.EFRepositoryGenerator
 {
     public class App : IHostedService
     {

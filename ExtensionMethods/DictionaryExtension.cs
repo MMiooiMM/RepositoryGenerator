@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Duotify.EFCore.RepositoryGenerator
+namespace Duotify.EFCore.EFRepositoryGenerator
 {
     public static class DictionaryExtension
     {

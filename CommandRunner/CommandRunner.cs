@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Duotify.EFCore.RepositoryGenerator
+namespace Duotify.EFCore.EFRepositoryGenerator
 {
     public class CommandRunner
     {

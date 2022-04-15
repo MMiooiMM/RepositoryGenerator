@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace Duotify.EFCore.RepositoryGenerator
+namespace Duotify.EFCore.EFRepositoryGenerator
 {
     internal static class Exe
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Duotify.EFCore.RepositoryGenerator
+namespace Duotify.EFCore.EFRepositoryGenerator
 {
     internal class CommandException : Exception
     {

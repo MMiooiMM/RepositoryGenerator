@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Duotify.EFCore.RepositoryGenerator.AnsiConstants;
+using static Duotify.EFCore.EFRepositoryGenerator.AnsiConstants;
 
-namespace Duotify.EFCore.RepositoryGenerator
+namespace Duotify.EFCore.EFRepositoryGenerator
 {
     internal static class Reporter
     {
