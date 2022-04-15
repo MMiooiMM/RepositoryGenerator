@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Duotify.EFCore.EFRepositoryGenerator.Properties;
+﻿using Duotify.EFCore.EFRepositoryGenerator.Properties;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
+using System.Text;
 
 namespace Duotify.EFCore.EFRepositoryGenerator
 {
@@ -73,7 +67,7 @@ namespace Duotify.EFCore.EFRepositoryGenerator
 
                         var assembly = GetAssemblyFromProject(project);
 
-                        var dbContextTypes = GetDbContextTypesFromAssembly(assembly);                        
+                        var dbContextTypes = GetDbContextTypesFromAssembly(assembly);
 
                         if (!string.IsNullOrWhiteSpace(namedArgs.GetValueOrDefault("context")))
                         {
@@ -81,9 +75,10 @@ namespace Duotify.EFCore.EFRepositoryGenerator
                             .Where(t => t.Name.Equals(namedArgs.GetValueOrDefault("context")));
                         }
 
-                        CreateFiles(dbContextTypes.FirstOrDefault(), 
+                        CreateFiles(dbContextTypes.FirstOrDefault(),
                             namedArgs.GetValueOrDefault("output"),
-                            project.RootNamespace);
+                            project.RootNamespace,
+                            namedArgs.ContainsKey("force"));
 
                         return 1;
                     });
@@ -263,7 +258,8 @@ namespace Duotify.EFCore.EFRepositoryGenerator
         /// <param name="type"></param>
         /// <param name="output"></param>
         /// <param name="baseNamespace"></param>
-        private void CreateFiles(Type type, string output, string baseNamespace)
+        /// <param name="force"></param>
+        private void CreateFiles(Type type, string output, string baseNamespace, bool force)
         {
             var outputDir = string.IsNullOrWhiteSpace(output)
                 ? Directory.GetCurrentDirectory()
@@ -280,16 +276,16 @@ namespace Duotify.EFCore.EFRepositoryGenerator
                .Where(prop => CheckIfDbSetGenericType(prop.PropertyType))
                .Select(type => type.PropertyType.GetGenericArguments()[0]);
 
-            CreateFile("EFRepository.cs", GenerateEFRepositoryTemplate(outputNamespace), outputDir);
-            CreateFile("EFUnitOfWork.cs", GenerateEFUnitOfWorkTemplate(type, outputNamespace), outputDir);
-            CreateFile("IRepository.cs", GenerateIRepositoryTemplate(outputNamespace), outputDir);
-            CreateFile("IUnitOfWork.cs", GenerateIUnitOfWorkTemplate(outputNamespace), outputDir);
-            CreateFile("RepositoryHelper.cs", GenerateRepositoryHelperTemplate(entityTypes, outputNamespace), outputDir);
+            CreateFile("EFRepository.cs", GenerateEFRepositoryTemplate(outputNamespace), outputDir, force);
+            CreateFile("EFUnitOfWork.cs", GenerateEFUnitOfWorkTemplate(type, outputNamespace), outputDir, force);
+            CreateFile("IRepository.cs", GenerateIRepositoryTemplate(outputNamespace), outputDir, force);
+            CreateFile("IUnitOfWork.cs", GenerateIUnitOfWorkTemplate(outputNamespace), outputDir, force);
+            CreateFile("RepositoryHelper.cs", GenerateRepositoryHelperTemplate(entityTypes, outputNamespace), outputDir, force);
 
-            foreach (var entityType in entityTypes) 
+            foreach (var entityType in entityTypes)
             {
-                CreateFile($"{entityType.Name}Repository.cs", GenerateRepositoryTemplate(entityType, outputNamespace), outputDir);
-            }           
+                CreateFile($"{entityType.Name}Repository.cs", GenerateRepositoryTemplate(entityType, outputNamespace), outputDir, force);
+            }
         }
 
         /// <summary>
@@ -298,9 +294,16 @@ namespace Duotify.EFCore.EFRepositoryGenerator
         /// <param name="fileName"></param>
         /// <param name="fileContent"></param>
         /// <param name="outputDir"></param>
-        private static void CreateFile(string fileName, string fileContent, string outputDir)
+        /// <param name="force"></param>
+        private static void CreateFile(string fileName, string fileContent, string outputDir, bool force)
         {
             var filePath = Path.Combine(outputDir, fileName);
+
+            if (File.Exists(filePath) && !force)
+            {
+                throw new CommandException(Resources.FileIsExisted(outputDir, fileName));
+            }
+
             using StreamWriter sw = new StreamWriter(filePath);
             sw.Write(fileContent);
             Reporter.WriteVerbose($"Creating {filePath}");
@@ -378,7 +381,8 @@ namespace Duotify.EFCore.EFRepositoryGenerator
             sb.AppendLine("            return new EFUnitOfWork();");
             sb.AppendLine("        }");
 
-            foreach (var entityType in entityTypes) {
+            foreach (var entityType in entityTypes)
+            {
                 sb.AppendLine();
                 sb.AppendLine($"        public static {entityType.Name}Repository Get{entityType.Name}Repository()");
                 sb.AppendLine("        {");
@@ -394,7 +398,7 @@ namespace Duotify.EFCore.EFRepositoryGenerator
                 sb.AppendLine("            return repository;");
                 sb.AppendLine("        }");
             }
-        
+
             sb.AppendLine("    }");
             sb.AppendLine("}");
 
@@ -465,7 +469,7 @@ namespace Duotify.EFCore.EFRepositoryGenerator
         /// </summary>
         /// <param name="outputNamespace"></param>
         /// <returns></returns>
-        private static string GenerateIUnitOfWorkTemplate(string outputNamespace) 
+        private static string GenerateIUnitOfWorkTemplate(string outputNamespace)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -492,7 +496,7 @@ namespace Duotify.EFCore.EFRepositoryGenerator
         /// <param name="type"></param>
         /// <param name="outputNamespace"></param>
         /// <returns></returns>
-        private static string GenerateEFUnitOfWorkTemplate(Type type, string outputNamespace) 
+        private static string GenerateEFUnitOfWorkTemplate(Type type, string outputNamespace)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -543,7 +547,7 @@ namespace Duotify.EFCore.EFRepositoryGenerator
         /// </summary>
         /// <param name="outputNamespace"></param>
         /// <returns></returns>
-        private static string GenerateIRepositoryTemplate(string outputNamespace) 
+        private static string GenerateIRepositoryTemplate(string outputNamespace)
         {
             StringBuilder sb = new StringBuilder();
 
